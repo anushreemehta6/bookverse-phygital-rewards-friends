@@ -2,10 +2,31 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Share2, BookOpen, Users, Sparkles } from "lucide-react";
+import { Heart, MessageCircle, Share2, BookOpen, Users, Sparkles, Wallet } from "lucide-react";
+
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
 
 const BookVerseHeader = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  
+  const connectWallet = async () => {
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        const accounts = await window.ethereum.request({
+          method: 'eth_requestAccounts',
+        });
+        setWalletAddress(accounts[0]);
+      } catch (error) {
+        console.error('Failed to connect wallet:', error);
+      }
+    } else {
+      alert('Please install MetaMask to connect your wallet');
+    }
+  };
 
   return (
     <header className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
@@ -37,25 +58,30 @@ const BookVerseHeader = () => {
 
         {/* User Actions */}
         <div className="flex items-center space-x-4">
-          {isAuthenticated ? (
+          {walletAddress ? (
             <div className="flex items-center space-x-3">
               <Badge variant="secondary" className="bg-gradient-gold text-secondary-foreground">
                 12 NFTs
               </Badge>
+              <div className="flex items-center space-x-2">
+                <Wallet className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                </span>
+              </div>
               <Avatar className="w-8 h-8">
                 <AvatarImage src="/placeholder.svg" />
                 <AvatarFallback>JD</AvatarFallback>
               </Avatar>
             </div>
           ) : (
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" onClick={() => setIsAuthenticated(true)}>
-                Sign In
-              </Button>
-              <Button className="bg-gradient-primary text-primary-foreground hover:shadow-glow transition-all duration-300">
-                Join BookVerse
-              </Button>
-            </div>
+            <Button 
+              onClick={connectWallet}
+              className="bg-gradient-primary text-primary-foreground hover:shadow-glow transition-all duration-300"
+            >
+              <Wallet className="w-4 h-4 mr-2" />
+              Connect Wallet
+            </Button>
           )}
         </div>
       </div>
