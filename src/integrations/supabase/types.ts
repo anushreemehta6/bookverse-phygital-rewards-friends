@@ -14,7 +14,241 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      book_reviews: {
+        Row: {
+          book_id: string
+          comments_count: number | null
+          created_at: string
+          id: string
+          is_featured: boolean | null
+          likes_count: number | null
+          rating: number
+          review_text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          comments_count?: number | null
+          created_at?: string
+          id?: string
+          is_featured?: boolean | null
+          likes_count?: number | null
+          rating: number
+          review_text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          comments_count?: number | null
+          created_at?: string
+          id?: string
+          is_featured?: boolean | null
+          likes_count?: number | null
+          rating?: number
+          review_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_reviews_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      books: {
+        Row: {
+          author: string
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          genre: string
+          id: string
+          isbn: string | null
+          title: string
+        }
+        Insert: {
+          author: string
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          genre: string
+          id?: string
+          isbn?: string | null
+          title: string
+        }
+        Update: {
+          author?: string
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          genre?: string
+          id?: string
+          isbn?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      community_activities: {
+        Row: {
+          activity_type: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          points_earned: number | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          points_earned?: number | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          points_earned?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      nft_rewards: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          mint_criteria: Json
+          name: string
+          rarity: string
+          redeemable_location: string | null
+          value_points: number | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          mint_criteria: Json
+          name: string
+          rarity: string
+          redeemable_location?: string | null
+          value_points?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          mint_criteria?: Json
+          name?: string
+          rarity?: string
+          redeemable_location?: string | null
+          value_points?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          community_points: number | null
+          created_at: string
+          display_name: string | null
+          id: string
+          reading_streak: number | null
+          total_books_read: number | null
+          total_nfts_earned: number | null
+          total_reviews: number | null
+          updated_at: string
+          user_id: string
+          username: string | null
+          wallet_address: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          community_points?: number | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          reading_streak?: number | null
+          total_books_read?: number | null
+          total_nfts_earned?: number | null
+          total_reviews?: number | null
+          updated_at?: string
+          user_id: string
+          username?: string | null
+          wallet_address?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          community_points?: number | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          reading_streak?: number | null
+          total_books_read?: number | null
+          total_nfts_earned?: number | null
+          total_reviews?: number | null
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
+      user_nfts: {
+        Row: {
+          earned_at: string
+          id: string
+          is_redeemed: boolean | null
+          nft_reward_id: string
+          redeemed_at: string | null
+          token_id: string | null
+          user_id: string
+        }
+        Insert: {
+          earned_at?: string
+          id?: string
+          is_redeemed?: boolean | null
+          nft_reward_id: string
+          redeemed_at?: string | null
+          token_id?: string | null
+          user_id: string
+        }
+        Update: {
+          earned_at?: string
+          id?: string
+          is_redeemed?: boolean | null
+          nft_reward_id?: string
+          redeemed_at?: string | null
+          token_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_nfts_nft_reward_id_fkey"
+            columns: ["nft_reward_id"]
+            isOneToOne: false
+            referencedRelation: "nft_rewards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

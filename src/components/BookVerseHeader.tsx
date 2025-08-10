@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Share2, BookOpen, Users, Sparkles, Wallet } from "lucide-react";
+import { Heart, MessageCircle, Share2, BookOpen, Users, Sparkles, Wallet, Award } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 declare global {
   interface Window {
@@ -12,6 +14,8 @@ declare global {
 
 const BookVerseHeader = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
   const connectWallet = async () => {
     if (typeof window.ethereum !== 'undefined') {
@@ -58,29 +62,37 @@ const BookVerseHeader = () => {
 
         {/* User Actions */}
         <div className="flex items-center space-x-4">
-          {walletAddress ? (
-            <div className="flex items-center space-x-3">
-              <Badge variant="secondary" className="bg-gradient-gold text-secondary-foreground">
-                12 NFTs
+          {user ? (
+            <div className="flex items-center gap-4">
+              <Badge variant="secondary" className="flex items-center gap-2">
+                <Award className="w-4 h-4" />
+                <span>3 NFTs</span>
               </Badge>
-              <div className="flex items-center space-x-2">
-                <Wallet className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+              <Button 
+                onClick={() => navigate('/dashboard')}
+                variant="outline"
+              >
+                Dashboard
+              </Button>
+              <div className="flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="/placeholder.svg" />
+                  <AvatarFallback>
+                    {user.email?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium">
+                  {user.email?.split('@')[0]}
                 </span>
               </div>
-              <Avatar className="w-8 h-8">
-                <AvatarImage src="/placeholder.svg" />
-                <AvatarFallback>JD</AvatarFallback>
-              </Avatar>
             </div>
           ) : (
             <Button 
-              onClick={connectWallet}
-              className="bg-gradient-primary text-primary-foreground hover:shadow-glow transition-all duration-300"
+              onClick={() => navigate('/auth')}
+              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
             >
               <Wallet className="w-4 h-4 mr-2" />
-              Connect Wallet
+              Join BookVerse
             </Button>
           )}
         </div>
