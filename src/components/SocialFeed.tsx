@@ -81,7 +81,8 @@ const SocialFeed = () => {
           </p>
         </div>
 
-        <div className="max-w-2xl mx-auto space-y-6">
+       
+          <div className="max-w-2xl mx-auto space-y-6 ">
           {mockPosts.map((post) => (
             <Card key={post.id} className="shadow-elegant hover:shadow-book transition-all duration-300">
               <CardHeader className="pb-3">
@@ -156,6 +157,8 @@ const SocialFeed = () => {
             </Card>
           ))}
         </div>
+      
+       
 
         <div className="text-center mt-12">
           <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/10">
