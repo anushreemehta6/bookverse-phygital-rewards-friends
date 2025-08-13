@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Users, Sparkles, ArrowRight } from "lucide-react";
-import heroImage from "@/assets/hero-books.jpg";
+import heroImage from "@/assets/bg.jpg";
 
 const HeroSection = () => {
   return (
@@ -13,11 +13,11 @@ const HeroSection = () => {
           backgroundImage: `url(${heroImage})`,
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-background/90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-background/70 to-background/50" />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 text-center">
+      <div className="relative z-5 container mx-auto px-4 text-center">
         <div className="max-w-4xl mx-auto">
           {/* Badge */}
           <Badge 
@@ -29,15 +29,15 @@ const HeroSection = () => {
           </Badge>
 
           {/* Main Heading */}
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            Where Books Meet
-            <span className="block bg-gradient-literary bg-clip-text text-transparent">
+          <h1 >
+           <span className="text-5xl md:text-7xl font-bold mb-6 leading-tight"> Where Books Meet</span> 
+            <span className="text-3xl md:text-5xl font-bold mb-6 leading-tight block bg-gradient-literary bg-clip-text text-transparent">
               Community & NFTs
             </span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-l md:text-xl  mb-8 max-w-2xl mx-auto leading-relaxed">
             Join a vibrant social platform for book lovers. Share reviews, discover communities, 
             and earn phygital NFTs redeemable at partner bookstores.
           </p>
@@ -70,7 +70,7 @@ const HeroSection = () => {
             <Button 
               size="lg" 
               variant="outline" 
-              className="border-primary text-primary hover:bg-primary/10 px-8 py-6 text-lg"
+              className="border-primary text-primary hover:bg-secondary text-black px-8 py-6 text-lg"
             >
               Explore Communities
             </Button>
@@ -79,7 +79,7 @@ const HeroSection = () => {
       </div>
 
       {/* Floating Elements */}
-      <div className="absolute top-20 left-10 animate-float">
+      {/* <div className="absolute top-20 left-10 animate-float">
         <div className="w-12 h-12 bg-gradient-gold rounded-lg flex items-center justify-center shadow-elegant">
           <BookOpen className="w-6 h-6 text-secondary-foreground" />
         </div>
@@ -88,7 +88,7 @@ const HeroSection = () => {
         <div className="w-16 h-16 bg-gradient-literary rounded-full flex items-center justify-center shadow-glow">
           <Sparkles className="w-8 h-8 text-primary-foreground" />
         </div>
-      </div>
+      </div> */}
     </section>
   );
 };
