@@ -47,21 +47,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signUp = async (email: string, password: string, username: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          username,
-          display_name: username
-        }
+  // 1️⃣ Check if username already exists in profiles table
+  const { data: existingUser, error: checkError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('username', username)
+    .single();
+
+  if (checkError && checkError.code !== 'PGRST116') {
+    // PGRST116 = No rows found, which is fine
+    return { error: checkError };
+  }
+
+  if (existingUser) {
+    return { error: { message: 'Username already taken' } };
+  }
+
+  // 2️⃣ Proceed with signup if username is free
+  const redirectUrl = `${window.location.origin}/`;
+
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: redirectUrl,
+      data: {
+        username,
+        display_name: username
       }
-    });
-    return { error };
-  };
+    }
+  });
+
+  return { error };
+};
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
