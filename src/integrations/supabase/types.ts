@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
-  }
   public: {
     Tables: {
       book_reviews: {
@@ -121,6 +116,186 @@ export type Database = {
         }
         Relationships: []
       }
+      community_posts: {
+        Row: {
+          id: string
+          user_id: string
+          content: string
+          post_type: 'general' | 'review' | 'recommendation'
+          book_title: string | null
+          book_author: string | null
+          rating: number | null
+          likes_count: number
+          comments_count: number
+          shares_count: number
+          is_featured: boolean | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          content: string
+          post_type?: 'general' | 'review' | 'recommendation'
+          book_title?: string | null
+          book_author?: string | null
+          rating?: number | null
+          likes_count?: number
+          comments_count?: number
+          shares_count?: number
+          is_featured?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          content?: string
+          post_type?: 'general' | 'review' | 'recommendation'
+          book_title?: string | null
+          book_author?: string | null
+          rating?: number | null
+          likes_count?: number
+          comments_count?: number
+          shares_count?: number
+          is_featured?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      post_likes: {
+        Row: {
+          id: string
+          post_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          user_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      post_comments: {
+        Row: {
+          id: string
+          post_id: string
+          user_id: string
+          content: string
+          likes_count: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          user_id: string
+          content: string
+          likes_count?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          user_id?: string
+          content?: string
+          likes_count?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      communities: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          icon: string | null
+          color_gradient: string | null
+          member_count: number
+          post_count: number
+          is_active: boolean | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          icon?: string | null
+          color_gradient?: string | null
+          member_count?: number
+          post_count?: number
+          is_active?: boolean | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          icon?: string | null
+          color_gradient?: string | null
+          member_count?: number
+          post_count?: number
+          is_active?: boolean | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      community_memberships: {
+        Row: {
+          id: string
+          community_id: string
+          user_id: string
+          joined_at: string
+          role: 'member' | 'moderator' | 'admin'
+        }
+        Insert: {
+          id?: string
+          community_id: string
+          user_id: string
+          joined_at?: string
+          role?: 'member' | 'moderator' | 'admin'
+        }
+        Update: {
+          id?: string
+          community_id?: string
+          user_id?: string
+          joined_at?: string
+          role?: 'member' | 'moderator' | 'admin'
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_memberships_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       nft_rewards: {
         Row: {
           created_at: string
@@ -172,6 +347,9 @@ export type Database = {
           total_books_read: number | null
           total_nfts_earned: number | null
           total_reviews: number | null
+          total_likes_received: number | null
+          total_comments_received: number | null
+          total_shares_received: number | null
           updated_at: string
           user_id: string
           username: string | null
@@ -188,6 +366,9 @@ export type Database = {
           total_books_read?: number | null
           total_nfts_earned?: number | null
           total_reviews?: number | null
+          total_likes_received?: number | null
+          total_comments_received?: number | null
+          total_shares_received?: number | null
           updated_at?: string
           user_id: string
           username?: string | null
@@ -204,6 +385,9 @@ export type Database = {
           total_books_read?: number | null
           total_nfts_earned?: number | null
           total_reviews?: number | null
+          total_likes_received?: number | null
+          total_comments_received?: number | null
+          total_shares_received?: number | null
           updated_at?: string
           user_id?: string
           username?: string | null
@@ -261,6 +445,32 @@ export type Database = {
       increment_user_nfts: {
         Args: { user_id: string }
         Returns: undefined
+      }
+      track_engagement_activity: {
+        Args: {
+          user_id: string
+          activity_type: string
+          points_earned?: number
+          metadata?: Json
+        }
+        Returns: string[]
+      }
+      join_community: {
+        Args: {
+          user_id: string
+          community_id: string
+        }
+        Returns: boolean
+      }
+      get_user_engagement_stats: {
+        Args: { user_id: string }
+        Returns: {
+          total_posts: number
+          total_likes_given: number
+          total_comments_given: number
+          communities_joined: number
+          engagement_score: number
+        }[]
       }
       update_reading_stats: {
         Args: {
@@ -363,43 +573,3 @@ export type TablesUpdate<
       ? U
       : never
     : never
-
-export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
-
-export const Constants = {
-  public: {
-    Enums: {},
-  },
-} as const
