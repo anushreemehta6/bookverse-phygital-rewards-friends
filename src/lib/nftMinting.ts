@@ -81,11 +81,10 @@ export class NFTMintingService {
         return { success: false, error: mintError.message };
       }
 
-      // Update user's total NFTs count
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ total_nfts_earned: profile?.total_nfts_earned ? profile.total_nfts_earned + 1 : 1 })
-        .eq('user_id', userId);
+      // Update user's total NFTs count using the database function
+      const { error: updateError } = await supabase.rpc('increment_user_nfts', {
+        user_id: userId
+      });
 
       if (updateError) {
         console.error('Failed to update NFT count:', updateError);
