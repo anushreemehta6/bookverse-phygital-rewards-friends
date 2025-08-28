@@ -82,9 +82,10 @@ export class NFTMintingService {
       }
 
       // Update user's total NFTs count
-      const { error: updateError } = await supabase.rpc('increment_user_nfts', {
-        user_id: userId
-      });
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ total_nfts_earned: profile?.total_nfts_earned ? profile.total_nfts_earned + 1 : 1 })
+        .eq('user_id', userId);
 
       if (updateError) {
         console.error('Failed to update NFT count:', updateError);
@@ -148,7 +149,8 @@ export class NFTMintingService {
           community_points: profile.community_points || 0,
         };
 
-        if (this.checkEligibility(reward.mint_criteria, userStats)) {
+        const criteria = reward.mint_criteria as NFTMintingCriteria;
+        if (this.checkEligibility(criteria, userStats)) {
           const { success } = await this.mintNFT(userId, reward.id);
           if (success) {
             mintedNFTs.push(reward.name);
@@ -173,6 +175,13 @@ export class NFTMintingService {
     metadata?: any
   ): Promise<void> {
     try {
+      // Get current profile for updates
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('community_points, total_nfts_earned')
+        .eq('user_id', userId)
+        .single();
+
       // Record the activity
       await supabase
         .from('community_activities')
@@ -185,10 +194,10 @@ export class NFTMintingService {
 
       // Update user's community points
       if (pointsEarned > 0) {
-        await supabase.rpc('add_community_points', {
-          user_id: userId,
-          points: pointsEarned
-        });
+        await supabase
+          .from('profiles')
+          .update({ community_points: profile?.community_points ? profile.community_points + pointsEarned : pointsEarned })
+          .eq('user_id', userId);
       }
 
       // Check and mint eligible NFTs

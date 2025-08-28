@@ -254,7 +254,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_community_points: {
+        Args: { points: number; user_id: string }
+        Returns: undefined
+      }
+      increment_user_nfts: {
+        Args: { user_id: string }
+        Returns: undefined
+      }
+      update_reading_stats: {
+        Args: {
+          books_increment?: number
+          reviews_increment?: number
+          streak_days?: number
+          user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
