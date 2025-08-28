@@ -7,8 +7,9 @@ import { AuthProvider } from "@/components/auth/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import NotFound from "./pages/NotFound";
 import Community from "./pages/Community";
+import NotFound from "./pages/NotFound";
+
 const queryClient = new QueryClient();
 
 const App = () => (
