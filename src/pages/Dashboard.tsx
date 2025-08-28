@@ -18,6 +18,8 @@ interface UserProfile {
   total_nfts_earned: number;
   reading_streak: number;
   community_points: number;
+  total_likes_received: number;
+  total_comments_received: number;
 }
 
 interface NFTReward {
@@ -99,11 +101,14 @@ const Dashboard = () => {
   const calculateNFTProgress = (criteria: any, profile: UserProfile | null) => {
     if (!profile) return 0;
     
-    if (criteria.books_read) {
-      return Math.min((profile.total_books_read / criteria.books_read) * 100, 100);
-    }
     if (criteria.reviews_count) {
       return Math.min((profile.total_reviews / criteria.reviews_count) * 100, 100);
+    }
+    if (criteria.likes_received) {
+      return Math.min((profile.total_likes_received / criteria.likes_received) * 100, 100);
+    }
+    if (criteria.comments_received) {
+      return Math.min((profile.total_comments_received / criteria.comments_received) * 100, 100);
     }
     if (criteria.community_points) {
       return Math.min((profile.community_points / criteria.community_points) * 100, 100);
@@ -154,18 +159,7 @@ const Dashboard = () => {
 
       <div className="container mx-auto px-4 py-8 space-y-8">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Books Read</CardTitle>
-              <Book className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{profile?.total_books_read || 0}</div>
-              <p className="text-xs text-muted-foreground">Keep reading to unlock NFTs</p>
-            </CardContent>
-          </Card>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Reviews Written</CardTitle>
@@ -174,6 +168,39 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold">{profile?.total_reviews || 0}</div>
               <p className="text-xs text-muted-foreground">Share your thoughts</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Likes Received</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{profile?.total_likes_received || 0}</div>
+              <p className="text-xs text-muted-foreground">Community engagement</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Comments Received</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{profile?.total_comments_received || 0}</div>
+              <p className="text-xs text-muted-foreground">Discussion starter</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Community Points</CardTitle>
+              <Trophy className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{profile?.community_points || 0}</div>
+              <p className="text-xs text-muted-foreground">Total earned</p>
             </CardContent>
           </Card>
 
@@ -322,7 +349,11 @@ const Dashboard = () => {
                 <Book className="h-6 w-6" />
                 <span>Add Book Review</span>
               </Button>
-              <Button className="h-20 flex-col gap-2" variant="outline">
+              <Button 
+                className="h-20 flex-col gap-2" 
+                variant="outline"
+                onClick={() => navigate('/community')}
+              >
                 <Users className="h-6 w-6" />
                 <span>Join Community</span>
               </Button>

@@ -129,7 +129,10 @@ const GenreCommunities = () => {
                 </div>
 
                 {/* Join Button */}
-                <Button className="w-full bg-gradient-primary text-primary-foreground hover:shadow-glow transition-all duration-300 group">
+                <Button 
+                  className="w-full bg-gradient-primary text-primary-foreground hover:shadow-glow transition-all duration-300 group"
+                  onClick={() => window.location.href = '/community'}
+                >
                   Join Community
                   <Sparkles className="w-4 h-4 ml-2 group-hover:animate-pulse" />
                 </Button>
