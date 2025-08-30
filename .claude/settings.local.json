@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(flow version:*)",
+      "Bash(flow transactions send:*)",
+      "Bash(flow accounts get:*)",
+      "Bash(flow keys derive:*)",
+      "Bash(flow scripts execute:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

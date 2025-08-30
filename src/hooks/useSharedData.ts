@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { SharedDataService, UserProfile, CommunityPost } from '@/lib/sharedDataService';
+import { SharedDataService, UserProfile, CommunityPost, Community, UserCommunityMembership } from '@/lib/sharedDataService';
 
 export const useSharedData = (userId: string | undefined) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [userCommunities, setUserCommunities] = useState<UserCommunityMembership[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -12,14 +14,18 @@ export const useSharedData = (userId: string | undefined) => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch profile and posts
-        const [userProfile, communityPosts] = await Promise.all([
+        // Fetch profile, posts, communities, and user memberships
+        const [userProfile, communityPosts, availableCommunities, userMemberships] = await Promise.all([
           SharedDataService.getUserProfile(userId),
-          SharedDataService.getCommunityPosts()
+          SharedDataService.getCommunityPosts(),
+          SharedDataService.getCommunities(),
+          SharedDataService.getUserCommunities(userId)
         ]);
 
         setProfile(userProfile);
         setPosts(communityPosts);
+        setCommunities(availableCommunities);
+        setUserCommunities(userMemberships);
       } catch (error) {
         console.error('Error fetching shared data:', error);
       } finally {
@@ -33,6 +39,8 @@ export const useSharedData = (userId: string | undefined) => {
     const unsubscribe = SharedDataService.subscribe(() => {
       setProfile(SharedDataService.getCachedProfile());
       setPosts(SharedDataService.getCachedPosts());
+      setCommunities(SharedDataService.getCachedCommunities());
+      setUserCommunities(SharedDataService.getCachedUserCommunities());
     });
 
     return unsubscribe;
@@ -66,18 +74,29 @@ export const useSharedData = (userId: string | undefined) => {
     return result;
   };
 
+  const joinCommunity = async (communityId: string) => {
+    if (!userId) return { success: false };
+    
+    const result = await SharedDataService.joinCommunity(userId, communityId);
+    return result;
+  };
+
   const refreshData = async () => {
     if (!userId) return;
     
     setLoading(true);
     try {
-      const [userProfile, communityPosts] = await Promise.all([
+      const [userProfile, communityPosts, availableCommunities, userMemberships] = await Promise.all([
         SharedDataService.getUserProfile(userId, true), // Force refresh
-        SharedDataService.getCommunityPosts(true) // Force refresh
+        SharedDataService.getCommunityPosts(true), // Force refresh
+        SharedDataService.getCommunities(true), // Force refresh
+        SharedDataService.getUserCommunities(userId, true) // Force refresh
       ]);
 
       setProfile(userProfile);
       setPosts(communityPosts);
+      setCommunities(availableCommunities);
+      setUserCommunities(userMemberships);
     } catch (error) {
       console.error('Error refreshing data:', error);
     } finally {
@@ -88,9 +107,12 @@ export const useSharedData = (userId: string | undefined) => {
   return {
     profile,
     posts,
+    communities,
+    userCommunities,
     loading,
     createPost,
     toggleLike,
+    joinCommunity,
     refreshData
   };
 };

@@ -942,7 +942,7 @@ const Community = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { profile, posts, loading, createPost, toggleLike } = useSharedData(user?.id);
+  const { profile, posts, communities, userCommunities, loading, createPost, toggleLike, joinCommunity: joinCommunityHook } = useSharedData(user?.id);
   
   // Local state for form and UI
   const [newPost, setNewPost] = useState('');
@@ -954,13 +954,33 @@ const Community = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [posting, setPosting] = useState(false);
 
-  // Mock communities data
-  const communities = [
-    { id: '1', name: "Sci-Fi Universe", description: "Explore futuristic worlds", icon: "🚀", color_gradient: "from-blue-500 to-purple-600", member_count: 3420 },
-    { id: '2', name: "Fantasy Realm", description: "Magic and adventures", icon: "🐉", color_gradient: "from-purple-500 to-pink-600", member_count: 4150 },
-    { id: '3', name: "Mystery & Thriller", description: "Unravel mysteries", icon: "🔍", color_gradient: "from-red-500 to-orange-600", member_count: 2890 },
-    { id: '4', name: "Romance Readers", description: "Love stories", icon: "💕", color_gradient: "from-pink-500 to-rose-600", member_count: 3800 }
-  ];
+  // Community membership functionality
+  const handleJoinCommunity = async (communityId: string) => {
+    if (!user) return;
+    
+    try {
+      const result = await joinCommunityHook(communityId);
+      
+      if (result.success) {
+        toast({
+          title: "Welcome!",
+          description: `You've joined the community! +${result.pointsEarned || 25} points earned 🎉`
+        });
+      } else {
+        toast({
+          title: "Info",
+          description: result.error || "Unable to join community",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to join community",
+        variant: "destructive"
+      });
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -1012,13 +1032,6 @@ const Community = () => {
     await toggleLike(postId);
   };
 
-  const handleJoinCommunity = async (communityId: string) => {
-    // Mock community joining for now
-    toast({
-      title: "Welcome!",
-      description: "You've joined the community! +25 points earned 🎉"
-    });
-  };
 
   const filteredPosts = posts.filter(post => {
     const matchesSearch = post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1114,27 +1127,41 @@ const Community = () => {
                 <CardDescription>Connect with fellow readers</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {communities.map((community) => (
-                  <div key={community.id} className="flex items-center justify-between p-3 border rounded-lg hover:shadow-sm transition-shadow">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${community.color_gradient} flex items-center justify-center`}>
-                        {community.icon}
+                {communities.slice(0, 4).map((community) => {
+                  const isJoined = userCommunities.some(membership => membership.community_id === community.id);
+                  
+                  return (
+                    <div key={community.id} className="flex items-center justify-between p-3 border rounded-lg hover:shadow-sm transition-shadow">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${community.color_gradient || 'from-gray-500 to-gray-600'} flex items-center justify-center`}>
+                          {community.icon || '📚'}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{community.name}</p>
+                          <p className="text-xs text-muted-foreground">{community.member_count.toLocaleString()} members</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-sm">{community.name}</p>
-                        <p className="text-xs text-muted-foreground">{community.member_count.toLocaleString()} members</p>
-                      </div>
+                      <Button 
+                        size="sm" 
+                        variant={isJoined ? "default" : "outline"}
+                        onClick={() => !isJoined && handleJoinCommunity(community.id)}
+                        disabled={isJoined}
+                      >
+                        {isJoined ? (
+                          <>
+                            <Award className="w-3 h-3 mr-1" />
+                            Joined
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-3 h-3 mr-1" />
+                            Join
+                          </>
+                        )}
+                      </Button>
                     </div>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleJoinCommunity(community.id)}
-                    >
-                      <Plus className="w-3 h-3 mr-1" />
-                      Join
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           </div>

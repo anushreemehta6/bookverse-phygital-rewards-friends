@@ -1,0 +1,25 @@
+{
+  "accounts": {
+    "admin": {
+      "address": "0x1cf42ad65f227d9d",
+      "key": {
+        "type": "hex",
+        "index": 0,
+        "signatureAlgorithm": "ECDSA_secp256k1",
+        "hashAlgorithm": "SHA2_256",
+        "privateKey": "7e70bf97178b46dfe4bff4fd8629bdded6b7fa4ae93d30f4c78b4a2c2844659a"
+      }
+    }
+  },
+  "contracts": {
+    "BookVerseNFT": "./flow/contracts/BookVerseNFT.cdc"
+  },
+  "networks": {
+    "testnet": "access.devnet.nodes.onflow.org:9000"
+  },
+  "deployments": {
+    "testnet": {
+      "admin": ["BookVerseNFT"]
+    }
+  }
+}

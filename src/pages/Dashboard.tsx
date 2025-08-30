@@ -361,10 +361,19 @@ import {
   TrendingUp,
   Sparkles,
   Home,
-  BookOpen
+  BookOpen,
+  Plus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { useSharedData } from '@/hooks/useSharedData';
+import { WalletConnect } from '@/components/flow/WalletConnect';
+import { useFlowWallet } from '@/components/flow/FlowWalletProvider';
+import { ReadingStreakComponent } from '@/components/gamification/ReadingStreakTracker';
+import { NFTCollection } from '@/components/nft/NFTCollection';
+import { AchievementTracker } from '@/components/achievements/AchievementTracker';
+import { PhygitalRedemptionCenter } from '@/components/nft/PhygitalRedemptionCenter';
+import { StreakData } from '@/lib/streakTracker';
 
 interface UserProfile {
   id: string;
@@ -409,7 +418,15 @@ interface EngagementStats {
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const navigate = useNavigate();
+  
+  // Use shared hook for synchronized data
+  const { profile, communities, userCommunities, loading, joinCommunity } = useSharedData(user?.id);
+  
+  // Flow wallet integration
+  const { user: flowUser, balance } = useFlowWallet();
+  
+  // Local state for dashboard-specific data
   const [nftRewards, setNftRewards] = useState<NFTReward[]>([]);
   const [userNfts, setUserNfts] = useState<UserNFT[]>([]);
   const [engagementStats, setEngagementStats] = useState<EngagementStats>({
@@ -419,47 +436,48 @@ const Dashboard = () => {
     communities_joined: 0,
     engagement_score: 0
   });
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [streakData, setStreakData] = useState<StreakData | undefined>();
+
+  // Handle community joining from dashboard
+  const handleJoinCommunity = async (communityId: string) => {
+    if (!user) return;
+    
+    try {
+      const result = await joinCommunity(communityId);
+      
+      if (result.success) {
+        toast({
+          title: "Welcome!",
+          description: `You've joined the community! +${result.pointsEarned || 25} points earned 🎉`
+        });
+      } else {
+        toast({
+          title: "Info",
+          description: result.error || "Unable to join community",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to join community",
+        variant: "destructive"
+      });
+    }
+  };
 
   useEffect(() => {
     if (!user) {
       navigate('/auth');
       return;
     }
-    fetchUserData();
+    
+    // Fetch dashboard-specific data (NFTs, etc.)
+    fetchDashboardData();
   }, [user, navigate]);
-  const fetchUserData = async () => {
+  
+  const fetchDashboardData = async () => {
     try {
-      // Fetch user profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (profileError) {
-        console.log('Profile not found, creating default profile');
-        // Create default profile if doesn't exist
-        const defaultProfile: UserProfile = {
-          id: '',
-          username: user?.email?.split('@')[0] || null,
-          display_name: user?.email?.split('@')[0] || null,
-          wallet_address: null,
-          total_books_read: 0,
-          total_reviews: 0,
-          total_nfts_earned: 0,
-          reading_streak: 0,
-          community_points: 0,
-          total_likes_received: 0,
-          total_comments_received: 0,
-          total_shares_received: 0
-        };
-        setProfile(defaultProfile);
-      } else {
-        setProfile(profileData);
-      }
-
       // Fetch engagement statistics
       try {
         const { data: engagementData, error: engagementError } = await supabase
@@ -467,11 +485,11 @@ const Dashboard = () => {
 
         if (!engagementError && engagementData && engagementData.length > 0) {
           setEngagementStats({
-            total_posts: engagementData[0].total_posts,
+            total_posts: engagementData[0].total_posts || 0,
             total_likes_received: engagementData[0].total_likes_given ?? 0,
             total_comments_received: engagementData[0].total_comments_given ?? 0,
-            communities_joined: engagementData[0].communities_joined,
-            engagement_score: engagementData[0].engagement_score
+            communities_joined: engagementData[0].communities_joined || 0,
+            engagement_score: engagementData[0].engagement_score || 0
           });
         }
       } catch (error) {
@@ -533,16 +551,13 @@ const Dashboard = () => {
       if (userNftsData) {
         setUserNfts(userNftsData as UserNFT[]);
       }
-
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error fetching dashboard data:', error);
       toast({
         title: "Warning",
         description: "Some data couldn't be loaded. Using defaults.",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -621,6 +636,7 @@ const Dashboard = () => {
               <Home className="w-4 h-4 mr-2" />
               Home
             </Button>
+            <WalletConnect variant="inline" showBalance={true} />
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
                 Welcome, {profile?.display_name || profile?.username || 'Reader'}
@@ -702,6 +718,66 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Wallet & Web3 Integration */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <div className="lg:col-span-2">
+            <WalletConnect variant="card" showBalance={true} />
+          </div>
+          <Card className="shadow-elegant">
+            <CardHeader>
+              <CardTitle className="text-lg">Web3 Benefits</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                  <Award className="w-4 h-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Own Your NFTs</p>
+                  <p className="text-xs text-muted-foreground">True digital ownership</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                  <Plus className="w-4 h-4 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Real Rewards</p>
+                  <p className="text-xs text-muted-foreground">Redeem at partner stores</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
+                  <Users className="w-4 h-4 text-purple-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Community</p>
+                  <p className="text-xs text-muted-foreground">Join the Web3 book ecosystem</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Achievement & NFT Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Achievement Tracker with Flow Integration */}
+          <AchievementTracker 
+            streakData={streakData}
+            userStats={{
+              reviews: profile?.total_reviews || 0,
+              likes: profile?.total_likes_received || 0,
+              communityPoints: profile?.community_points || 0,
+              posts: engagementStats.total_posts,
+              uniqueGenres: 3, // This would come from actual data
+            }}
+          />
+
+          {/* NFT Collection with Phygital Redemption */}
+          <NFTCollection className="h-fit" />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* NFT Rewards Progress */}
           <Card className="shadow-elegant">
@@ -842,7 +918,7 @@ const Dashboard = () => {
                   <p className="text-xs text-muted-foreground">Comments Received</p>
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-purple-500">{engagementStats.communities_joined}</p>
+                  <p className="text-lg font-bold text-purple-500">{userCommunities.length}</p>
                   <p className="text-xs text-muted-foreground">Communities</p>
                 </div>
               </div>
@@ -1003,7 +1079,7 @@ const Dashboard = () => {
                   <p className="text-xs text-muted-foreground">Comments Received</p>
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-purple-500">{engagementStats.communities_joined}</p>
+                  <p className="text-lg font-bold text-purple-500">{userCommunities.length}</p>
                   <p className="text-xs text-muted-foreground">Communities</p>
                 </div>
               </div>
@@ -1074,28 +1150,14 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Reading Streak */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-orange-500" />
-                  <h3 className="font-semibold">Reading Streak</h3>
-                </div>
-                <div className="text-center py-4">
-                  <p className="text-3xl font-bold text-orange-500">{profile?.reading_streak || 0}</p>
-                  <p className="text-sm text-muted-foreground">Days in a row</p>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Goal: 30 days</span>
-                    <span>{Math.min(((profile?.reading_streak || 0) / 30) * 100, 100).toFixed(0)}%</span>
-                  </div>
-                  <Progress value={Math.min(((profile?.reading_streak || 0) / 30) * 100, 100)} className="h-2" />
-                </div>
-                <Button size="sm" variant="outline" className="w-full">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Log Today's Reading
-                </Button>
-              </div>
+              <ReadingStreakComponent onStreakUpdate={(newStreakData) => {
+                // Update the profile state when streak changes
+                setStreakData(newStreakData);
+                if (profile) {
+                  // This would typically trigger a refresh of the shared data
+                  console.log('Streak updated:', newStreakData);
+                }
+              }} />
 
               {/* Community Engagement */}
               <div className="space-y-3">
@@ -1129,6 +1191,98 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* My Communities Section */}
+        <Card className="shadow-elegant">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-blue-500" />
+              My Communities
+            </CardTitle>
+            <CardDescription>
+              Communities you've joined and available communities
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Joined Communities */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm">Joined Communities ({userCommunities.length})</h3>
+                {userCommunities.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No communities joined yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {userCommunities.slice(0, 3).map((membership) => (
+                      <div key={membership.community_id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${membership.community.color_gradient || 'from-blue-500 to-purple-600'} flex items-center justify-center`}>
+                          {membership.community.icon || '📚'}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{membership.community.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Joined {new Date(membership.joined_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          <Award className="w-3 h-3 mr-1" />
+                          Member
+                        </Badge>
+                      </div>
+                    ))}
+                    {userCommunities.length > 3 && (
+                      <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/community')}>
+                        View all {userCommunities.length} communities
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Available Communities to Join */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm">Discover More Communities</h3>
+                <div className="space-y-2">
+                  {communities
+                    .filter(community => !userCommunities.some(membership => membership.community_id === community.id))
+                    .slice(0, 3)
+                    .map((community) => (
+                      <div key={community.id} className="flex items-center gap-3 p-3 border rounded-lg hover:shadow-sm transition-shadow">
+                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${community.color_gradient || 'from-gray-500 to-gray-600'} flex items-center justify-center`}>
+                          {community.icon || '📚'}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{community.name}</p>
+                          <p className="text-xs text-muted-foreground">{community.member_count.toLocaleString()} members</p>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleJoinCommunity(community.id)}
+                        >
+                          <Plus className="w-3 h-3 mr-1" />
+                          Join
+                        </Button>
+                      </div>
+                    ))}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full" 
+                    onClick={() => navigate('/community')}
+                  >
+                    Explore All Communities
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Phygital Redemption Center */}
+        <PhygitalRedemptionCenter />
       </div>
     </div>
   );

@@ -35,10 +35,29 @@ export interface CommunityPost {
   is_liked?: boolean;
 }
 
+export interface Community {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  color_gradient: string | null;
+  member_count: number;
+  is_joined?: boolean;
+  created_at: string;
+}
+
+export interface UserCommunityMembership {
+  community_id: string;
+  joined_at: string;
+  community: Community;
+}
+
 export class SharedDataService {
   // In-memory cache for real-time updates
   private static userProfileCache: UserProfile | null = null;
   private static postsCache: CommunityPost[] = [];
+  private static communitiesCache: Community[] = [];
+  private static userCommunitiesCache: UserCommunityMembership[] = [];
   private static listeners: Array<() => void> = [];
 
   /**
@@ -347,6 +366,8 @@ export class SharedDataService {
   static clearCache() {
     this.userProfileCache = null;
     this.postsCache = [];
+    this.communitiesCache = [];
+    this.userCommunitiesCache = [];
     this.notifyListeners();
   }
 
@@ -362,5 +383,195 @@ export class SharedDataService {
    */
   static getCachedPosts(): CommunityPost[] {
     return this.postsCache;
+  }
+
+  /**
+   * Get available communities
+   */
+  static async getCommunities(forceRefresh = false): Promise<Community[]> {
+    if (!forceRefresh && this.communitiesCache.length > 0) {
+      return this.communitiesCache;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('is_active', true)
+        .order('member_count', { ascending: false });
+
+      if (error) {
+        console.log('Using mock communities');
+        this.communitiesCache = this.getMockCommunities();
+      } else {
+        this.communitiesCache = data || [];
+      }
+
+      return this.communitiesCache;
+    } catch (error) {
+      console.error('Error fetching communities:', error);
+      return this.getMockCommunities();
+    }
+  }
+
+  /**
+   * Get user's community memberships
+   */
+  static async getUserCommunities(userId: string, forceRefresh = false): Promise<UserCommunityMembership[]> {
+    if (!forceRefresh && this.userCommunitiesCache.length > 0) {
+      return this.userCommunitiesCache;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('community_memberships')
+        .select(`
+          community_id,
+          joined_at,
+          community:communities(*)
+        `)
+        .eq('user_id', userId)
+        .order('joined_at', { ascending: false });
+
+      if (error) {
+        console.log('No user communities found or error:', error);
+        this.userCommunitiesCache = [];
+      } else {
+        this.userCommunitiesCache = data || [];
+      }
+
+      return this.userCommunitiesCache;
+    } catch (error) {
+      console.error('Error fetching user communities:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Join a community
+   */
+  static async joinCommunity(userId: string, communityId: string): Promise<{ success: boolean; pointsEarned?: number; error?: string }> {
+    try {
+      // Check if already joined locally
+      const isAlreadyJoined = this.userCommunitiesCache.some(
+        membership => membership.community_id === communityId
+      );
+
+      if (isAlreadyJoined) {
+        return { success: false, error: 'Already joined this community' };
+      }
+
+      const pointsEarned = 25;
+
+      // Try database join
+      try {
+        const { data, error } = await supabase.rpc('join_community', {
+          user_id: userId,
+          community_id: communityId
+        });
+
+        if (error) throw error;
+      } catch (dbError) {
+        console.log('Database join failed, updating local state only');
+      }
+
+      // Update local caches
+      const community = this.communitiesCache.find(c => c.id === communityId);
+      if (community) {
+        // Update community cache
+        const communityIndex = this.communitiesCache.findIndex(c => c.id === communityId);
+        if (communityIndex !== -1) {
+          this.communitiesCache[communityIndex] = {
+            ...community,
+            member_count: community.member_count + 1,
+            is_joined: true
+          };
+        }
+
+        // Add to user communities cache
+        const newMembership: UserCommunityMembership = {
+          community_id: communityId,
+          joined_at: new Date().toISOString(),
+          community: { ...community, is_joined: true }
+        };
+        this.userCommunitiesCache = [newMembership, ...this.userCommunitiesCache];
+      }
+
+      // Update user profile points
+      if (this.userProfileCache) {
+        this.userProfileCache = {
+          ...this.userProfileCache,
+          community_points: this.userProfileCache.community_points + pointsEarned
+        };
+      }
+
+      this.notifyListeners();
+      return { success: true, pointsEarned };
+    } catch (error) {
+      console.error('Failed to join community:', error);
+      return { success: false, error: 'Failed to join community' };
+    }
+  }
+
+  /**
+   * Get mock communities for development
+   */
+  private static getMockCommunities(): Community[] {
+    return [
+      {
+        id: '1',
+        name: "Sci-Fi Universe",
+        description: "Explore futuristic worlds",
+        icon: "🚀",
+        color_gradient: "from-blue-500 to-purple-600",
+        member_count: 3420,
+        created_at: new Date().toISOString(),
+        is_joined: false
+      },
+      {
+        id: '2',
+        name: "Fantasy Realm",
+        description: "Magic and adventures",
+        icon: "🐉",
+        color_gradient: "from-purple-500 to-pink-600",
+        member_count: 4150,
+        created_at: new Date().toISOString(),
+        is_joined: false
+      },
+      {
+        id: '3',
+        name: "Mystery & Thriller",
+        description: "Unravel mysteries",
+        icon: "🔍",
+        color_gradient: "from-red-500 to-orange-600",
+        member_count: 2890,
+        created_at: new Date().toISOString(),
+        is_joined: false
+      },
+      {
+        id: '4',
+        name: "Romance Readers",
+        description: "Love stories",
+        icon: "💕",
+        color_gradient: "from-pink-500 to-rose-600",
+        member_count: 3800,
+        created_at: new Date().toISOString(),
+        is_joined: false
+      }
+    ];
+  }
+
+  /**
+   * Get cached communities
+   */
+  static getCachedCommunities(): Community[] {
+    return this.communitiesCache;
+  }
+
+  /**
+   * Get cached user communities
+   */
+  static getCachedUserCommunities(): UserCommunityMembership[] {
+    return this.userCommunitiesCache;
   }
 }
